@@ -1,0 +1,71 @@
+{
+    "name": "SalesforceDeployUtils",
+    "version": "0.0.1",
+    "description": "",
+    "author": "Gabriel Loch",
+    "license": "MIT",
+    "keywords": [
+        "apex",
+        "automation",
+        "change-set",
+        "ci-cd",
+        "compare",
+        "continuous-deployment",
+        "delta-deploy",
+        "deploy",
+        "deployment",
+        "dx",
+        "enviroment",
+        "git-integration",
+        "lwc",
+        "manifest",
+        "merge",
+        "metadata",
+        "metadata-api",
+        "org-management",
+        "post-deploy",
+        "pre-deploy",
+        "release-management",
+        "retrieve",
+        "salesforce",
+        "salesforce-cli",
+        "salesforce-deployment",
+        "salesforce-devops",
+        "salesforce-metadata",
+        "sandbox",
+        "scratch-org",
+        "sf",
+        "sfdx",
+        "source-deploy",
+        "source-tracking",
+        "test-automation",
+        "validation",
+        "version-control"
+    ],
+    "defaultEnvValues": {
+        "RETRIVED_DIR": "./retrived",
+        "MANIFEST_DIR": "./manifest",
+        "LOG_DIR": "./log",
+        "REMOVE_PROFIE_USER_PERMISSIONS": false,
+        "RETRIVED_DIR_WITH_MANIFEST": false
+    },
+    "scripts": {
+        "build": "npx tsc --outDir ./build",
+        "retrieve": "node build/retrieve.js",
+        "watch:build": "tsc --watch"
+    },
+    "dependencies": {
+        "@inquirer/prompts": "^7.5.3",
+        "dotenv": "^16.5.0",
+        "fs-extra": "^11.3.0",
+        "inquirer-file-selector": "^0.6.2",
+        "log4js": "^6.9.1"
+    },
+    "devDependencies": {
+        "@types/fs-extra": "^11.0.4",
+        "@types/inquirer": "^9.0.8",
+        "@types/node": "^22.15.29",
+        "typescript": "^5.8.3"
+    },
+    "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+}
