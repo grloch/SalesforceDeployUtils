@@ -10,5 +10,3 @@ declare global {
         info: log4js.Logger;
     };
 }
-
-export default global;

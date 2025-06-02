@@ -37,6 +37,7 @@ export function safeString(input: string, fallback: string): string {
     return input;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getEnvVariable(envVariableName: string): any {
     return safeString(<string>process.env[envVariableName], pjson.defaultEnvValues[envVariableName]);
 }
@@ -87,6 +88,7 @@ export function getOrgAlias() {
 }
 
 export function prettyNum(num: number) {
+    // eslint-disable-next-line no-extra-boolean-cast
     if (!!!num) {
         return num;
     }

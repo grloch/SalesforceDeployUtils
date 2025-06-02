@@ -1,10 +1,4 @@
-import { promisify } from 'util';
-import { exec } from 'child_process';
 import { spawn } from 'child_process';
-
-import * as ChildProcess from 'child_process';
-
-const execPromise = promisify(exec);
 
 export default class SfdxController {
     private consoleUsableArgsname: Array<string> = ['target-org'];

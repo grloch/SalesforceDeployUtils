@@ -1,9 +1,9 @@
-import log4js from 'log4js';
-
 import Fs from 'fs';
 import Path from 'path';
 
 import Utils from './utils';
+
+import log4js from 'log4js';
 
 type LoggerName = 'main' | 'error' | 'info' | 'sfdx';
 
@@ -80,7 +80,7 @@ export function getLogger(loggerName: LoggerName) {
     return global.logger?.[loggerName];
 }
 
-export function functionError(methodPath: string, error: any): any {
+export function functionError(methodPath: string, error: Error) {
     global.logger?.error.error(`${methodPath} got an error:`);
     global.logger?.error.error(error);
 }

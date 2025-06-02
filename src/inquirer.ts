@@ -2,16 +2,15 @@ import { select } from '@inquirer/prompts';
 import { select as inquirerSelectPro } from 'inquirer-select-pro';
 
 import Utils from './utils';
-
 import * as logger from './logger';
 
-interface getListItemParams {
-    message: string;
-    multiples?: Boolean;
-    options: Array<string | { name: string; value: string }>;
-}
+// interface getListItemParams {
+//     message: string;
+//     multiples?: Boolean;
+//     options: Array<string | { name: string; value: string }>;
+// }
 
-function handleInquirerTryCatch(inquirerMessage: string, error: any) {
+function handleInquirerTryCatch(inquirerMessage: string, error: Error) {
     if (error instanceof Error && error.name === 'ExitPromptError') {
         global.logger?.main.error(`User canceled operation "${inquirerMessage}"`);
     } else {
@@ -32,13 +31,13 @@ async function getFileOrDirPath(options: { rootPath: string; message: string; al
 }
 
 // TODO add logs
-async function getListItem(options: getListItemParams) {
-    return await select({
-        message: options.message,
-        choices: options.options.map((option) => (typeof option === 'string' ? { name: option, value: option } : option)),
-        pageSize: 10,
-    });
-}
+// async function getListItem(options: getListItemParams) {
+//     return await select({
+//         message: options.message,
+//         choices: options.options.map((option) => (typeof option === 'string' ? { name: option, value: option } : option)),
+//         pageSize: 10,
+//     });
+// }
 
 export async function selectManifestFile(): Promise<string | undefined> {
     const message = 'Select a xml file to retrieve';
