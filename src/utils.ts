@@ -1,6 +1,5 @@
 import * as Fs from 'fs';
 import * as path from 'path';
-import inquirer from './inquirer';
 
 const pjson = require('../package.json');
 
@@ -9,6 +8,20 @@ require('dotenv').config();
 export function createDirIfDontExist(path: string) {
     if (!Fs.existsSync(path)) {
         Fs.mkdirSync(path, { recursive: true });
+
+        global.logger?.main?.info(`Created path ${path}`);
+
+        return true;
+    }
+
+    return false;
+}
+
+export function removeDirIfExist(path: string) {
+    if (!Fs.existsSync(path)) {
+        Fs.rmSync(path, { recursive: true, force: true });
+
+        global.logger?.main?.info(`Removed path ${path}`);
 
         return true;
     }
@@ -26,18 +39,6 @@ export function safeString(input: string, fallback: string): string {
 
 export function getEnvVariable(envVariableName: string): any {
     return safeString(<string>process.env[envVariableName], pjson.defaultEnvValues[envVariableName]);
-}
-
-export async function selectManifestFile() {
-    const message = 'Select a xml file to retrieve';
-    const rootPath = getEnvVariable('MANIFEST_DIR');
-    const allowedExtensions = ['.xml'];
-
-    createDirIfDontExist(rootPath);
-
-    global.logger?.default.trace(`Awaiting user choose target manifest at ${rootPath}`);
-
-    return await inquirer.getFileOrDirPath({ message, rootPath, allowedExtensions });
 }
 
 export function listFilesByExtensions(dir: string, allowedExtensions: string[], fileList: string[] = []): Array<string> {
@@ -60,13 +61,6 @@ export function listFilesByExtensions(dir: string, allowedExtensions: string[], 
     return fileList;
 }
 
-export async function getTargetOrg() {
-    return await inquirer.getListItem({
-        message: 'Select target environment',
-        options: getOrgAlias(),
-    });
-}
-
 export function getOrgAlias() {
     const aliasOptions: Array<{ name: string; value: string }> = [];
 
@@ -80,11 +74,11 @@ export function getOrgAlias() {
         aliasOptions.push({ name: `${i}: ${process.env[i]}`, value: <string>process.env[i] });
     }
 
-    global.logger?.default.trace(`Avaliable org alias: ${JSON.stringify(aliasOptions)}`);
+    global.logger?.main?.trace(`Avaliable org alias: ${JSON.stringify(aliasOptions)}`);
 
     if (aliasOptions.length == 0) {
         let error = `No Salesforce org alias founded on ./.env, make sure that all org alias variables starts with "SF_" and has a value: "SF_PROD=MyClientProdOrg"`;
-        global.logger?.default.error(error);
+        global.logger?.main?.error(error);
 
         throw new Error(error);
     }
@@ -110,10 +104,10 @@ export function prettyNum(num: number) {
 
 export default {
     prettyNum,
+    getOrgAlias,
     createDirIfDontExist,
     safeString,
-    selectManifestFile,
+    removeDirIfExist,
     listFilesByExtensions,
-    getTargetOrg,
     getEnvVariable,
 };

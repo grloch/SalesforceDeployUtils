@@ -1,8 +1,17 @@
+import { promisify } from 'util';
+import { exec } from 'child_process';
+import { spawn } from 'child_process';
+
 import * as ChildProcess from 'child_process';
 
+const execPromise = promisify(exec);
+
 export default class SfdxController {
+    private consoleUsableArgsname: Array<string> = ['target-org'];
     private command: string;
     private commandArgs = new Map<string, string>();
+
+    private consoleUsableArgs = new Map<string, string>();
 
     constructor(command: string) {
         this.command = `sf ${command}`;
@@ -25,15 +34,84 @@ export default class SfdxController {
 
     addArgumment(argumment: string, value: string) {
         this.commandArgs.set(argumment, value);
+        global.logger?.sfdx?.trace(`SFDX controller add argumment "${argumment}${value && `=${value}`}"`);
+
+        argumment = argumment.replace(/^(-+)|(-+)$/g, '');
+
+        if (this.consoleUsableArgsname.includes(argumment)) {
+            this.consoleUsableArgs.set(argumment, value);
+        }
     }
 
     async executeCommand() {
-        const sfdxProcess = ChildProcess.exec(this.consoleCommand, async (e: any, sOut: any, sErr: any) => {
-            global.logger?.sfdx.info(e);
-        });
+        const targetOrg = this.getConsoleUsableArgsValue('target-org');
 
-        sfdxProcess.stdout?.on('data', (data) => {
-            for (var i of data.split('\n')) if (i && i.trim() != '') global.logger?.sfdx.info(i ?? '');
+        // global.logger?.sfdx?.info(`Executing SFDX command ${targetOrg && `for target org "${targetOrg}"`}`);
+
+        // const sfdxProcess = await ChildProcess.exec(
+        //     this.consoleCommand,
+
+        //     async (error: ChildProcess.ExecException | null, stdout: string, stderr: string) => {
+        //         if (error) {
+        //             global.logger?.info.fatal(error);
+        //         }
+        //     }
+        // );
+
+        // sfdxProcess.stdout?.on('data', (data) => {
+        //     for (var i of data.split('\n')) {
+        //         if (i && i.trim() != '' && i.trim() != 'null') {
+        //             global.logger?.sfdx.info(i ?? '');
+        //         }
+        //     }
+        // });
+
+        // sfdxProcess.stdout?.on('end', () => {
+        //     global.logger?.info?.trace(`Ended async command ${targetOrg && `for target org "${targetOrg}"`}`);
+        // });
+
+        global.logger?.sfdx?.info(`Executing SFDX command ${targetOrg && `for target org "${targetOrg}"`}`);
+
+        return new Promise<void>((resolve, reject) => {
+            const child = spawn(this.consoleCommand, {
+                shell: true,
+                stdio: ['ignore', 'pipe', 'pipe'],
+            });
+
+            child.stdout?.on('data', (data) => {
+                const lines = data.toString().split('\n');
+                for (const line of lines) {
+                    if (line.trim()) {
+                        global.logger?.sfdx.info(line.trim());
+                    }
+                }
+            });
+
+            child.stderr?.on('data', (data) => {
+                const lines = data.toString().split('\n');
+                for (const line of lines) {
+                    if (line.trim()) {
+                        global.logger?.info?.info(line.trim());
+                    }
+                }
+            });
+
+            child.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    global.logger?.sfdx.fatal(`Command failed with exit code ${code}`);
+                }
+            });
+
+            child.on('error', (error) => {
+                global.logger?.info?.fatal(error);
+                reject(error);
+            });
         });
+    }
+
+    private getConsoleUsableArgsValue(arg: string) {
+        return this.consoleUsableArgs.get(arg);
     }
 }

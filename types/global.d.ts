@@ -1,14 +1,14 @@
 import log4js from 'log4js';
 
 declare global {
-  // namespace globalThis {
+    var loggerPath: string;
+
     var logger: {
-      default: log4js.Logger;
-      info: log4js.Logger;
-      sfdx: log4js.Logger;
-      path: string;
+        main: log4js.Logger;
+        error: log4js.Logger;
+        sfdx: log4js.Logger;
+        info: log4js.Logger;
     };
-  // }
 }
 
 export default global;

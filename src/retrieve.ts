@@ -1,58 +1,82 @@
 import Fs from 'fs';
 import path from 'path';
-import setLogger from './logger';
-import SfdxController from './sfdxController';
-import Utils from './utils';
 import { confirm } from '@inquirer/prompts';
 
-require('dotenv').config();
-setLogger('retrieve');
+import SfdxController from './sfdxController';
+import Utils from './utils';
+import inquirer from './inquirer';
 
-(async () => {
-    global.logger?.info.trace(`Preparing to retrive Salesforce source (${process.cwd()})`);
+import * as logger from './logger';
+
+require('dotenv').config();
+logger.setDefaultLogger('retrieve');
+
+async function retrieveExec(manifestFile?: string, targetOrgs?: Array<string>) {
+    const mainLogger = logger.getLogger('main');
+
+    mainLogger?.trace(`Preparing to retrive Salesforce source (${process.cwd()})`);
     Utils.createDirIfDontExist(Utils.getEnvVariable('MANIFEST_DIR'));
 
-    const manifestFile: string = await Utils.selectManifestFile();
-    if (!!!manifestFile || manifestFile == '') return;
+    if (!manifestFile) {
+        manifestFile = await inquirer.selectManifestFile();
+    }
+    if (!manifestFile || manifestFile === '') return;
 
-    const targetOrg = await Utils.getTargetOrg();
-    if (!!!targetOrg || targetOrg == '') return;
+    if (!targetOrgs || targetOrgs.length == 0) {
+        let selectedTargetOrgs = await inquirer.getTargetOrgs(true);
+        if (!selectedTargetOrgs) return;
 
-    global.logger?.info.info('Retrieving data from ' + targetOrg);
+        if (!Array.isArray(selectedTargetOrgs)) {
+            selectedTargetOrgs = [selectedTargetOrgs];
+        }
+
+        targetOrgs = [...new Set(selectedTargetOrgs.filter((i) => !!i))];
+    }
+    if (targetOrgs.length == 0) return;
+
+    mainLogger?.info('Retrieving data from: ' + targetOrgs.join(', '));
+
+    const targetOrgName = targetOrgs.shift();
+
+    if (!targetOrgName || targetOrgName.length == 0) return;
 
     const retrieveController = new SfdxController('project retrieve start');
     retrieveController.addArgumment('--manifest', manifestFile);
-    retrieveController.addArgumment('--target-org', targetOrg);
+    retrieveController.addArgumment('--target-org', targetOrgName);
 
-    var destDir = path.join(Utils.getEnvVariable('RETRIVED_DIR'), targetOrg);
+    let destDir = path.join(Utils.getEnvVariable('RETRIVED_DIR'), targetOrgName);
     if (Utils.getEnvVariable('RETRIVED_DIR_WITH_MANIFEST')) {
         destDir = path.join(destDir, manifestFile.replace('.xml', ''));
     }
 
     retrieveController.addArgumment('--output-dir', destDir);
-    Utils.createDirIfDontExist(destDir);
 
-    global.logger?.default.trace('command ', `'${retrieveController.consoleCommand}'`);
-    global.logger?.default.trace(`Ouput will be saved at ${destDir}`);
+    mainLogger?.trace(`Ouput will be saved at ${destDir}`);
 
     if (Fs.existsSync(destDir)) {
+        mainLogger?.trace(`Path ${destDir} already exist`);
+
         const confirmExclusion = await confirm({ message: `${destDir} already existe, replace it?` });
         if (confirmExclusion) {
-            Fs.rmSync(destDir, { recursive: true, force: true });
+            mainLogger?.trace(`User confirmed exclusion of path ${destDir}`);
+
+            Utils.removeDirIfExist(destDir);
         } else {
             return;
         }
     }
 
-    try {
-        global.logger?.default.trace(`Executing SFDX command`);
+    Utils.createDirIfDontExist(destDir);
 
-        retrieveController.executeCommand().then(() => {
-            if (Fs.existsSync(destDir)) {
-                Fs.copyFileSync(manifestFile, path.join(destDir, 'manifest.xml'));
-            }
-        });
-    } catch (error) {
-        global.logger?.sfdx.error('SFDX process error: ' + error);
+    global.logger?.info?.info(`Enqueued async retriving for ${targetOrgName}`);
+
+    await retrieveController.executeCommand();
+
+    if (targetOrgs.length > 0) {
+        mainLogger?.info(`====================================================================}`);
+
+        retrieveExec(manifestFile, targetOrgs);
     }
-})();
+}
+
+retrieveExec('manifest/test.xml');
